@@ -10,6 +10,7 @@ import javafx.scene.Parent;
 import javafx.stage.Stage;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.fxml.JavaFXBuilderFactory;
 import javafx.event.ActionEvent;
 
 public class Control
@@ -53,6 +54,7 @@ public class Control
                     Parent pane = FXMLLoader.load(getClass().getResource("DoctorView.fxml"));
                     stage.setTitle("医生界面");
                     stage.setScene(new Scene(pane));
+                    stage.setResizable(false);
                     stage.show();
                 }
                 catch(Exception e)
@@ -77,14 +79,22 @@ public class Control
             {
                 SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//设置日期格式
                 String currentTime = df.format(new Date());
+                String YCJE = re.getString("YCJE");
                 System.out.println(re.getString(2)+" 登录成功！ 登录时间："+currentTime);
                 sql = "update t_brxx set DLRQ='"+currentTime+"' where BRBH='"+re.getString(1)+"'";
                 state.executeUpdate(sql);
                 try
                 {
-                    Parent pane = FXMLLoader.load(getClass().getResource("PatientView.fxml"));
+                    FXMLLoader fxmlLoader = new FXMLLoader();
+                    fxmlLoader.setLocation(getClass().getResource("PatientView.fxml"));
+                    fxmlLoader.setBuilderFactory(new JavaFXBuilderFactory());
+                    Parent pane = fxmlLoader.load();
                     stage.setTitle("病人挂号界面"); 
                     stage.setScene(new Scene(pane));
+                    stage.setResizable(false);
+                    PatientView controller = fxmlLoader.getController();
+                    controller.jkje.setText(YCJE);
+                    controller.Init();
                     stage.show();
                 }
                 catch(Exception e)

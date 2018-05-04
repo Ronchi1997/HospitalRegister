@@ -19,12 +19,12 @@
          </children></AnchorPane>
     <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
          <children>
-            <Label layoutX="60.0" layoutY="83.0" text="号种类别">
+            <Label layoutX="317.0" layoutY="83.0" text="号种类别">
                <font>
                   <Font name="Arial Bold" size="15.0" />
                </font>
             </Label>
-            <Label layoutX="317.0" layoutY="83.0" text="号种名称">
+            <Label layoutX="60.0" layoutY="83.0" text="号种名称">
                <font>
                   <Font name="Arial Bold" size="15.0" />
                </font>
@@ -59,10 +59,10 @@
                   <Font name="Arial Bold" size="15.0" />
                </font>
             </Label>
-            <TextField fx:id="ksmc" layoutX="125.0" layoutY="33.0" />
-            <TextField fx:id="ysxm" layoutX="382.0" layoutY="33.0" />
-            <TextField fx:id="hzlb" layoutX="125.0" layoutY="78.0" />
-            <TextField fx:id="hzmc" layoutX="382.0" layoutY="78.0" />
+            <ChoiceBox fx:id="ksmc" layoutX="130.0" layoutY="33.0" prefWidth="160.0" />
+            <ChoiceBox fx:id="ysxm" layoutX="387.0" layoutY="33.0" prefWidth="160.0" />
+            <ChoiceBox fx:id="hzmc" layoutX="130.0" layoutY="78.0" prefWidth="160.0" />
+            <ChoiceBox fx:id="hzlb" layoutX="387.0" layoutY="78.0" prefWidth="160.0" />
             <TextField fx:id="yjje" layoutX="382.0" layoutY="123.0" />
             <TextField fx:id="jkje" layoutX="125.0" layoutY="123.0" />
             <TextField fx:id="zlje" layoutX="125.0" layoutY="168.0" />
