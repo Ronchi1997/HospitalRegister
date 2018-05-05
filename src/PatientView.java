@@ -3,6 +3,9 @@ import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Date;
+import java.lang.Integer;
+import java.text.SimpleDateFormat;
 import java.math.BigDecimal;
 import javafx.fxml.FXML;
 import javafx.event.ActionEvent;
@@ -38,6 +41,12 @@ public class PatientView
     private ObservableList hzmcItems = FXCollections.observableArrayList();
     private ObservableList hzlbItems = FXCollections.observableArrayList();
 
+    private static int ghrc = 0;
+    public String KSBH;
+    public String HZBH;
+    public String YSBH;
+    public String BRBH;
+
     public void Init()
     {
         zlje.setEditable(false);
@@ -48,40 +57,33 @@ public class PatientView
         ksmc.getSelectionModel().selectedIndexProperty().addListener((ov,oldv,newv)->{
             try
             {
-                ysxmItems.clear();
-                hzmcItems.clear();
                 hzlbItems.clear();
+                hzmcItems.clear();
+                ysxmItems.clear();
                 yjje.clear();
                 zlje.clear();
                 ghhm.clear();
                 Statement state = connection.createStatement();
                 String sql = new String();
-                String sql1 = new String();
                 switch(newv.intValue())
                 {
                     case 0:
-                        sql = "select YSMC from t_ksys where KSBH='000001'";
-                        sql1 = "select HZMC from t_hzxx where KSBH='000001'";
+                        sql = "select * from t_ksys where KSBH='000001'";
                         break;
                     case 1:
-                        sql = "select YSMC from t_ksys where KSBH='000002'";
-                        sql1 = "select HZMC from t_hzxx where KSBH='000002'";
+                        sql = "select * from t_ksys where KSBH='000002'";
                         break;
                     case 2:
-                        sql = "select YSMC from t_ksys where KSBH='000003'";
-                        sql1 = "select HZMC from t_hzxx where KSBH='000003'";
+                        sql = "select * from t_ksys where KSBH='000003'";
                         break;
                     case 3:
-                        sql = "select YSMC from t_ksys where KSBH='000004'";
-                        sql1 = "select HZMC from t_hzxx where KSBH='000004'";
+                        sql = "select * from t_ksys where KSBH='000004'";
                         break;
                     case 4:
-                        sql = "select YSMC from t_ksys where KSBH='000005'";
-                        sql1 = "select HZMC from t_hzxx where KSBH='000005'";
+                        sql = "select * from t_ksys where KSBH='000005'";
                         break;
                     case 5:
-                        sql = "select YSMC from t_ksys where KSBH='000006'";
-                        sql1 = "select HZMC from t_hzxx where KSBH='000006'";
+                        sql = "select * from t_ksys where KSBH='000006'";
                         break;
                 }
                 ResultSet rs = state.executeQuery(sql);
@@ -89,14 +91,33 @@ public class PatientView
                 {
                     String YSMC = rs.getString("YSMC");
                     ysxmItems.add(new String(YSMC));
-                }
-                ResultSet rs1 = state.executeQuery(sql1);
-                while(rs1.next())
-                {
-                    String HZMC = rs1.getString("HZMC");
-                    hzmcItems.add(new String(HZMC));
+                    this.KSBH = rs.getString("KSBH");
+                    this.YSBH = rs.getString("YSBH");
                 }
                 ysxm.setItems(ysxmItems);
+            }
+            catch(SQLException e)
+            {
+                e.printStackTrace();
+            }
+        });
+        ysxm.getSelectionModel().selectedIndexProperty().addListener((ov,oldv,newv)->{
+            try
+            {
+                hzlbItems.clear();
+                hzmcItems.clear();
+                yjje.clear();
+                zlje.clear();
+                ghhm.clear();
+                Statement state = connection.createStatement();
+                String sql = "select HZBH,HZMC from t_hzxx where KSBH='"+this.KSBH+"'";
+                ResultSet rs = state.executeQuery(sql);
+                while(rs.next())
+                {
+                    String HZMC = rs.getString("HZMC");
+                    hzmcItems.add(new String(HZMC));
+                    this.HZBH = rs.getString("HZBH");
+                }
                 hzmc.setItems(hzmcItems);
             }
             catch(SQLException e)
@@ -129,27 +150,50 @@ public class PatientView
         hzlb.getSelectionModel().selectedIndexProperty().addListener((ov,oldv,newv)->{
             try
             {
-                yjje.clear();
-                zlje.clear();
-                ghhm.clear();
+                ghrc += 1;
                 Statement state = connection.createStatement();
-                String sql = "select GHFY from t_hzxx where HZMC='"+ hzmc.getItems().get(0) +"'";
-                ResultSet rs = state.executeQuery(sql);
-                if(rs.next())
+                ResultSet re = state.executeQuery("select GHRS from t_hzxx where HZMC='"+ hzmc.getItems().get(0) +"'");
+                re.next();
+                if(ghrc > re.getInt("GHRS"))
                 {
-                    yjje.setText(rs.getBigDecimal("GHFY").toString());
-                }
-                BigDecimal jkjed = new BigDecimal(jkje.getText());
-                BigDecimal yjjed = new BigDecimal(yjje.getText());
-                BigDecimal zl = jkjed.subtract(yjjed);
-                if(zl.compareTo(BigDecimal.ZERO) == -1)
-                {
-                    Alert message = new Alert(Alert.AlertType.ERROR,"余额不足");
+                    Alert message = new Alert(Alert.AlertType.ERROR,"挂号人次已达上限");
                     message.showAndWait();
-                    zlje.setText("余额不足");
                 }
                 else
-                    zlje.setText(zl.toString());
+                {
+                    yjje.clear();
+                    zlje.clear();
+                    ghhm.clear();
+                    String sql = "select GHFY from t_hzxx where HZMC='"+ hzmc.getItems().get(0) +"'";
+                    ResultSet rs = state.executeQuery(sql);
+                    if(rs.next())
+                    {
+                        yjje.setText(rs.getBigDecimal("GHFY").toString());
+                    }
+                    BigDecimal jkjed = new BigDecimal(jkje.getText());
+                    BigDecimal yjjed = new BigDecimal(yjje.getText());
+                    BigDecimal zl = jkjed.subtract(yjjed);
+
+                    if(zl.compareTo(BigDecimal.ZERO) == -1)
+                    {
+                        Alert message = new Alert(Alert.AlertType.ERROR,"余额不足");
+                        message.showAndWait();
+                        zlje.setText("余额不足");
+                    }
+                    else
+                    {
+                        zlje.setText(zl.toString());
+                        SimpleDateFormat df = new SimpleDateFormat("MMdd");//设置日期格式
+                        String date = df.format(new Date());
+                        Integer i = new Integer(ghrc);
+                        String GHBH = date + "0" + i.toString();
+                        ghhm.setText(GHBH);
+
+                        SimpleDateFormat cf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//设置日期格式
+                        String currentTime = cf.format(new Date());
+                        state.execute("insert into t_ghxx(GHBH,HZBH,YSBH,BRBH,GHRC,THBZ,GHFY,RQSJ) values('"+ghhm.getText()+"','"+this.HZBH+"','"+this.YSBH+"','"+this.BRBH+"','"+new Integer(ghrc).toString()+"','1','"+yjje.getText()+"','"+currentTime+"')");
+                    }
+                }
             }
             catch(SQLException e)
             {
@@ -160,25 +204,32 @@ public class PatientView
 	@FXML
     private void on_btn_OK_clicked(ActionEvent event)
     {
-        on_btn_Exit_clicked(event);
+        try
+        {
+            Statement state = connection.createStatement();
+            state.executeUpdate("update t_ghxx set THBZ='0' where GHBH='"+ghhm.getText()+"'");
+            state.executeUpdate("update t_brxx set YCJE='"+zlje.getText()+"' where BRBH='"+this.BRBH+"'");
+            Alert message = new Alert(Alert.AlertType.INFORMATION,"挂号成功");
+            message.showAndWait();
+        }
+        catch(SQLException e)
+        {
+            e.printStackTrace();
+        }
     }
 	@FXML
     private void on_btn_Clr_clicked(ActionEvent event)
     {
+        ysxmItems.clear();
+        hzmcItems.clear();
+        hzlbItems.clear();
     	yjje.clear();
     	zlje.clear();
     	ghhm.clear();
-        Init();
     }
     @FXML
     private void on_btn_Exit_clicked(ActionEvent event)
     {
     	((Node)(event.getSource())).getScene().getWindow().hide();
-    }
-    //获取挂号的编号
-    private String getReg()
-    {
-        String GHBH = new String();
-        return GHBH;
     }
 }

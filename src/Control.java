@@ -51,10 +51,15 @@ public class Control
                 state.executeUpdate(sql);
                 try
                 {
-                    Parent pane = FXMLLoader.load(getClass().getResource("DoctorView.fxml"));
+                    FXMLLoader fxmlLoader = new FXMLLoader();
+                    fxmlLoader.setLocation(getClass().getResource("DoctorView.fxml"));
+                    fxmlLoader.setBuilderFactory(new JavaFXBuilderFactory());
+                    Parent pane = fxmlLoader.load();
                     stage.setTitle("医生界面");
                     stage.setScene(new Scene(pane));
                     stage.setResizable(false);
+                    DoctorView controller = fxmlLoader.getController();
+                    controller.Init();
                     stage.show();
                 }
                 catch(Exception e)
@@ -80,8 +85,9 @@ public class Control
                 SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//设置日期格式
                 String currentTime = df.format(new Date());
                 String YCJE = re.getString("YCJE");
+                String BRBH = re.getString("BRBH");
                 System.out.println(re.getString(2)+" 登录成功！ 登录时间："+currentTime);
-                sql = "update t_brxx set DLRQ='"+currentTime+"' where BRBH='"+re.getString(1)+"'";
+                sql = "update t_brxx set DLRQ='"+currentTime+"' where BRBH='"+BRBH+"'";
                 state.executeUpdate(sql);
                 try
                 {
@@ -94,6 +100,7 @@ public class Control
                     stage.setResizable(false);
                     PatientView controller = fxmlLoader.getController();
                     controller.jkje.setText(YCJE);
+                    controller.BRBH = BRBH;
                     controller.Init();
                     stage.show();
                 }

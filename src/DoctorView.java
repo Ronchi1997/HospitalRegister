@@ -5,8 +5,6 @@ import java.sql.ResultSet;
 import javafx.fxml.FXML;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.beans.property.StringProperty;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.control.cell.PropertyValueFactory;
 
 @SuppressWarnings("unchecked")
@@ -54,9 +52,32 @@ public class DoctorView
     private ObservableList<PatientInfo> patientItems = FXCollections.observableArrayList();
     private ObservableList<IncomeInfo> incomeItems = FXCollections.observableArrayList();
 
+    private String BeginDate, EndDate;
+    private boolean BeginReady = false, EndReady = false;
+
+    public void Init()
+    {
+        BeginDatePicker.valueProperty().addListener((ov,oldv,newv)->{
+            if (newv != null && BeginDatePicker.getValue() != null)
+            {
+                BeginDate = newv.toString() + " 00:00:00";
+                BeginReady = true;
+            }
+        });
+        EndDatePicker.valueProperty().addListener((ov,oldv,newv)->{
+            if (newv != null && BeginDatePicker.getValue() != null)
+            {
+                EndDate = newv.toString() + " 23:59:59";
+                EndReady = true;
+            }
+        });
+    }
+
 	@FXML
     private void on_menu_Patient_clicked() throws Exception
     {
+        patientItems.clear();
+
         LabelBegin.setVisible(true);
         LabelEnd.setVisible(true);
         BeginDatePicker.setVisible(true);
@@ -65,13 +86,18 @@ public class DoctorView
         PatientTable.setVisible(true);
     	ModeLabel.setText("病人列表");
 
-        ghbhCol.setCellValueFactory(new PropertyValueFactory<PatientInfo, String>("ghbhp"));
-        brmcCol.setCellValueFactory(new PropertyValueFactory<PatientInfo, String>("brmcp"));
-        rqsjCol.setCellValueFactory(new PropertyValueFactory<PatientInfo, String>("rqsjp"));
-        hzlbCol.setCellValueFactory(new PropertyValueFactory<PatientInfo, String>("hzlbp"));
+        ghbhCol.setCellValueFactory(new PropertyValueFactory<PatientInfo, String>("GHBH"));
+        brmcCol.setCellValueFactory(new PropertyValueFactory<PatientInfo, String>("BRMC"));
+        rqsjCol.setCellValueFactory(new PropertyValueFactory<PatientInfo, String>("RQSJ"));
+        hzlbCol.setCellValueFactory(new PropertyValueFactory<PatientInfo, String>("HZLB"));
 
         Statement state = connection.createStatement();
-        String sql = "select GHBH, BRMC, RQSJ, SFZJ FROM t_brxx, t_hzxx, t_ghxx where t_brxx.BRBH = t_ghxx.BRBH and t_ghxx.HZBH = t_hzxx.HZBH";
+        String sql = "select GHBH,BRMC,RQSJ,SFZJ "+
+                    "from t_brxx,t_hzxx,t_ghxx "+
+                    "where t_brxx.BRBH=t_ghxx.BRBH and t_ghxx.HZBH=t_hzxx.HZBH and t_ghxx.THBZ='0'";
+        if(BeginReady && EndReady)
+            sql += "and t_ghxx.RQSJ >= '" + BeginDate + "' "+
+                    "and t_ghxx.RQSJ <= '" + EndDate + "'";
         ResultSet rs = state.executeQuery(sql);
         
         while(rs.next())
@@ -82,13 +108,15 @@ public class DoctorView
             String SJ = rs.getTime("RQSJ").toString();
             String HZLB = rs.getBoolean("SFZJ") ? "专家号" : "普通号";
 
-            patientItems.add(new PatientInfo(GHBH, BRMC, RQ + " " + SJ, HZLB));
+            patientItems.add(new PatientInfo(GHBH, BRMC, RQ + "  " + SJ, HZLB));
         }
         PatientTable.setItems(patientItems);
     }
     @FXML
     private void on_menu_Income_clicked() throws Exception
     {
+        incomeItems.clear();
+
         LabelBegin.setVisible(true);
         LabelEnd.setVisible(true);
         BeginDatePicker.setVisible(true);
@@ -97,173 +125,39 @@ public class DoctorView
         IncomeTable.setVisible(true);
     	ModeLabel.setText("收入列表");
 
-        ksmcCol.setCellValueFactory(new PropertyValueFactory<IncomeInfo, String>("ksmcp"));
-        ysbhCol.setCellValueFactory(new PropertyValueFactory<IncomeInfo, String>("ysbhp"));
-        ysmcCol.setCellValueFactory(new PropertyValueFactory<IncomeInfo, String>("ysmcp"));
-        hzlcCol.setCellValueFactory(new PropertyValueFactory<IncomeInfo, String>("hzlcp"));
-        ghrcCol.setCellValueFactory(new PropertyValueFactory<IncomeInfo, String>("ghrcp"));
-        srhjCol.setCellValueFactory(new PropertyValueFactory<IncomeInfo, String>("srhjp"));
-    	
+        ksmcCol.setCellValueFactory(new PropertyValueFactory<IncomeInfo, String>("KSMC"));
+        ysbhCol.setCellValueFactory(new PropertyValueFactory<IncomeInfo, String>("YSBH"));
+        ysmcCol.setCellValueFactory(new PropertyValueFactory<IncomeInfo, String>("YSMC"));
+        hzlcCol.setCellValueFactory(new PropertyValueFactory<IncomeInfo, String>("HZLC"));
+        ghrcCol.setCellValueFactory(new PropertyValueFactory<IncomeInfo, String>("GHRC"));
+        srhjCol.setCellValueFactory(new PropertyValueFactory<IncomeInfo, String>("SRHJ"));
+
+        Statement state = connection.createStatement();
+        String sql = "select HZBH,KSMC,t_ghxx.YSBH,YSMC,SFZJ,COUNT(GHRC),SUM(GHFY) "+
+                    "from t_ksxx,t_ksys,t_ghxx "+
+                    "where t_ksxx.KSBH = t_ksys.KSBH and t_ksys.YSBH = t_ghxx.YSBH and t_ghxx.THBZ='0' ";
+        if(BeginReady && EndReady)
+            sql += "and t_ghxx.RQSJ >= '" + BeginDate + "' "+
+                    "and t_ghxx.RQSJ <= '" + EndDate + "'";
+            sql += "group by HZBH, KSMC, YSBH, YSMC, SFZJ";
+        ResultSet rs = state.executeQuery(sql);
+        
+        while(rs.next())
+        {
+            String KSMC = rs.getString("KSMC");
+            String YSBH = rs.getString("YSBH");
+            String YSMC = rs.getString("YSMC");
+            String HZLC = rs.getBoolean("SFZJ") ? "专家号" : "普通号";
+            int GHRC = rs.getInt(6);
+            Double SRHJ = rs.getDouble(7);
+
+            incomeItems.add(new IncomeInfo(KSMC, YSBH, YSMC, HZLC, String.valueOf(GHRC), String.valueOf(SRHJ)));
+        }
+        IncomeTable.setItems(incomeItems);
     }
 	@FXML
     private void on_menu_Exit_clicked()
     {
     	ModeLabel.getScene().getWindow().hide();
-    }
-}
-
-class PatientInfo
-{
-    private final StringProperty ghbhp;
-    private final StringProperty brmcp;
-    private final StringProperty rqsjp;
-    private final StringProperty hzlbp;
-
-    public PatientInfo(String ghbh, String brmc, String rqsj, String hzlb)
-    {
-        this.ghbhp = new SimpleStringProperty(ghbh);
-        this.brmcp = new SimpleStringProperty(brmc);
-        this.rqsjp = new SimpleStringProperty(rqsj);
-        this.hzlbp = new SimpleStringProperty(hzlb);
-    }
-    public String getGhbh()
-    {
-        return ghbhp.get();
-    }
-    public void setghbh(String ghbh)
-    {
-        ghbhp.set(ghbh);
-    }
-    public StringProperty ghbhProperty()
-    {
-        return ghbhp;
-    }
-    public String getbrmc()
-    {
-        return brmcp.get();
-    }
-    public void setbrmc(String brmc)
-    {
-        brmcp.set(brmc);
-    }
-    public StringProperty brmcProperty()
-    {
-        return brmcp;
-    }
-    public String getrqsj()
-    {
-        return rqsjp.get();
-    }
-    public void setrqsj(String rqsj)
-    {
-        rqsjp.set(rqsj);
-    }
-    public StringProperty rqsjProperty()
-    {
-        return rqsjp;
-    }
-    public String gethzlb()
-    {
-        return hzlbp.get();
-    }
-    public void sethzlb(String hzlb)
-    {
-        hzlbp.set(hzlb);
-    }
-    public StringProperty hzlbProperty()
-    {
-        return hzlbp;
-    }
-}
-
-class IncomeInfo
-{
-    private final StringProperty ksmcp;
-    private final StringProperty ysbhp;
-    private final StringProperty ysmcp;
-    private final StringProperty hzlcp;
-    private final StringProperty ghrcp;
-    private final StringProperty srhjp;
-
-    public IncomeInfo(String ksmc, String ysbh, String ysmc, String hzlc, String ghrc, String srhj)
-    {
-        this.ksmcp = new SimpleStringProperty(ksmc);
-        this.ysbhp = new SimpleStringProperty(ysbh);
-        this.ysmcp = new SimpleStringProperty(ysmc);
-        this.hzlcp = new SimpleStringProperty(hzlc);
-        this.ghrcp = new SimpleStringProperty(ghrc);
-        this.srhjp = new SimpleStringProperty(srhj);
-    }
-    public String getksmc()
-    {
-        return ksmcp.get();
-    }
-    public void setksmc(String ksmc)
-    {
-        ksmcp.set(ksmc);
-    }
-    public StringProperty ksmcProperty()
-    {
-        return ksmcp;
-    }
-    public String getysbh()
-    {
-        return ysbhp.get();
-    }
-    public void setysbh(String ysbh)
-    {
-        ysbhp.set(ysbh);
-    }
-    public StringProperty ysbhProperty()
-    {
-        return ysbhp;
-    }
-    public String getysmc()
-    {
-        return ysmcp.get();
-    }
-    public void setysmc(String ysmc)
-    {
-        ysmcp.set(ysmc);
-    }
-    public StringProperty ysmcProperty()
-    {
-        return ysmcp;
-    }
-    public String gethzlc()
-    {
-        return hzlcp.get();
-    }
-    public void sethzlc(String hzlc)
-    {
-        hzlcp.set(hzlc);
-    }
-    public StringProperty hzlcProperty()
-    {
-        return hzlcp;
-    }
-    public String getghrc()
-    {
-        return ghrcp.get();
-    }
-    public void setghrc(String ghrc)
-    {
-        ghrcp.set(ghrc);
-    }
-    public StringProperty ghrcProperty()
-    {
-        return ghrcp;
-    }
-    public String getsrhj()
-    {
-        return srhjp.get();
-    }
-    public void setsrhj(String srhj)
-    {
-        srhjp.set(srhj);
-    }
-    public StringProperty srhjProperty()
-    {
-        return srhjp;
     }
 }
